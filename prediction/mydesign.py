@@ -7,16 +7,17 @@
 
 import os
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
-import numpy as np 
-import matplotlib.pyplot as plt 
+import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import load_model
+
 from PyQt6 import QtCore, QtGui, QtWidgets
 from    PyQt6.QtWidgets import QFileDialog
-import pandas as pd
-import numpy as np
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -62,7 +63,7 @@ class Ui_MainWindow(object):
         self.dubao.setText(_translate("MainWindow", "Du bao"))
         self.dubao_2.setText(_translate("MainWindow", "Du bao ngay mai "))
         self.vebd.setText("Ve bieu do duong")
-
+    #
     def Handle_the_file(self):
         dialog = QFileDialog()
         dialog.exec()
@@ -81,7 +82,7 @@ class Ui_MainWindow(object):
         self.prediction = model.predict(X_input)
         print(f"Predicted value for the day after tomorrow: {self.prediction}")
         self.textEdit.setText(str(self.prediction[0][0]*100))
-        
+
     def plot_graph(self):
         df=pd.read_csv(self.filepath)
         data=df[-100:]
