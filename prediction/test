@@ -1,0 +1,12 @@
+
+from sklearn.preprocessing import MinMaxScaler
+from keras._tf_keras.keras.models import load_model
+import pandas as pd
+df =pd.read_csv("C:\\Users\\admin\\OneDrive\\Desktop\\test\\lstm_stock_apple\\prediction\\Apple Dataset.csv")
+data_test = df[:-1]
+data = data_test["Adj Close"].values
+model_path = "model.keras"
+X_input = data[-100:].reshape(1, 100, 1)
+model = load_model("C:\\Users\\admin\\OneDrive\\Desktop\\test\\lstm_stock_apple\\prediction\\model.keras")
+model.predict(X_input)
+

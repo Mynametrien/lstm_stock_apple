@@ -70,12 +70,14 @@ class Ui_MainWindow(object):
         dialog.setNameFilter( "CSV Files (*.csv)")
         path =dialog.selectedFiles()
         self.filepath = path[0]
+        print(self.filepath)
 
     def prediction_the_price(self):
         df =pd.read_csv(self.filepath)
         data_test = df[:-1]
+        print(df)
         data = data_test["Adj Close"].values
-        model_path = "model.keras"
+        model_path = "C:\\Users\\admin\\OneDrive\\Desktop\\test\\lstm_stock_apple\\prediction\\model.keras"
         X_input = data[-100:].reshape(1, 100, 1)
         print(X_input)
         model = load_model(model_path)
@@ -84,6 +86,7 @@ class Ui_MainWindow(object):
         self.textEdit.setText(str(self.prediction[0][0]*100))
 
     def plot_graph(self):
+     
         df=pd.read_csv(self.filepath)
         data=df[-100:]
         data= data["Adj Close"]
@@ -105,6 +108,8 @@ class Ui_MainWindow(object):
         print(data)
 
         plt.show()
+    
+
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
