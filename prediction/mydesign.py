@@ -18,7 +18,7 @@ from tensorflow.keras.models import load_model
 from PyQt6 import QtCore, QtGui, QtWidgets
 from    PyQt6.QtWidgets import QFileDialog
 
-class Ui_MainWindow(object):
+class Ui_MainWindow_main(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(867, 505)
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
+    ui = Ui_MainWindow_main()
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec())
