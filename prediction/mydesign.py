@@ -17,6 +17,8 @@ from tensorflow.keras.models import load_model
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from    PyQt6.QtWidgets import QFileDialog
+import yfinance as yf
+
 
 class Ui_MainWindow_main(object):
     def setupUi(self, MainWindow):
@@ -24,20 +26,30 @@ class Ui_MainWindow_main(object):
         MainWindow.resize(867, 505)
         self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.chonfile = QtWidgets.QPushButton(parent=self.centralwidget)
-        self.chonfile.setGeometry(QtCore.QRect(660, 120, 93, 28))
-        self.chonfile.setObjectName("chonfile")
+        # self.chonfile = QtWidgets.QPushButton(parent=self.centralwidget)
+        # self.chonfile.setGeometry(QtCore.QRect(660, 120, 93, 28))
+        # self.chonfile.setObjectName("chonfile") phụ thuộc vào nguồn Yahoo Finance,
+        self.label = QtWidgets.QLabel(parent=self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(100, 60, 500, 91))
+        font = QtGui.QFont()
+        font.setPointSize(20)
+        font.setBold(True)
+        font.setWeight(75)
+        self.label.setFont(font)
+        self.label.setObjectName("label")
+
+
         self.dubao = QtWidgets.QPushButton(parent=self.centralwidget)
-        self.dubao.setGeometry(QtCore.QRect(660, 180, 93, 28))
+        self.dubao.setGeometry(QtCore.QRect(660, 180, 160, 28))
         self.dubao.setObjectName("dubao")
         self.vebd = QtWidgets.QPushButton(parent=self.centralwidget)
         self.vebd.setGeometry(QtCore.QRect(660, 240, 160, 28))
         self.vebd.setObjectName("Vebd")
         self.textEdit = QtWidgets.QTextEdit(parent=self.centralwidget)
-        self.textEdit.setGeometry(QtCore.QRect(230, 160, 291, 41))
+        self.textEdit.setGeometry(QtCore.QRect(260, 160, 150, 26))
         self.textEdit.setObjectName("textEdit")
         self.dubao_2 = QtWidgets.QLabel(parent=self.centralwidget)
-        self.dubao_2.setGeometry(QtCore.QRect(120, 170, 111, 16))
+        self.dubao_2.setGeometry(QtCore.QRect(30, 165, 500, 16))
         self.dubao_2.setObjectName("dubao_2")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
@@ -47,7 +59,7 @@ class Ui_MainWindow_main(object):
         self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
-        self.chonfile.clicked.connect(self.Handle_the_file)
+        #self.chonfile.clicked.connect(self.Handle_the_file)
         self.dubao.clicked.connect(self.prediction_the_price)
         self.vebd.clicked.connect(self.plot_graph)
         self.path=""
@@ -59,10 +71,12 @@ class Ui_MainWindow_main(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.chonfile.setText(_translate("MainWindow", "Chon file "))
+        #self.chonfile.setText(_translate("MainWindow", "Chon file "))
         self.dubao.setText(_translate("MainWindow", "Du bao"))
-        self.dubao_2.setText(_translate("MainWindow", "Du bao ngay mai "))
-        self.vebd.setText("Ve bieu do duong")
+        self.dubao_2.setText(_translate("MainWindow", "Du bao giá Adj Close cho phiên tiếp theo: "))
+        self.vebd.setText("Vẽ biểu đồ")
+        self.label.setText( "Ngày giao dịch mới nhất: " + self.ngay_gan_nhat() )
+        
     #
     def Handle_the_file(self):
         dialog = QFileDialog()
@@ -73,23 +87,96 @@ class Ui_MainWindow_main(object):
         print(self.filepath)
 
     def prediction_the_price(self):
-        df =pd.read_csv(self.filepath)
-        data_test = df[:-1]
-        print(df)
-        data = data_test["Adj Close"].values
-        model_path = "C:\\Users\\admin\\OneDrive\\Desktop\\test\\lstm_stock_apple\\prediction\\model.keras"
-        X_input = data[-100:].reshape(1, 100, 1)
-        print(X_input)
-        model = load_model(model_path)
-        self.prediction = model.predict(X_input)
-        print(f"Predicted value for the day after tomorrow: {self.prediction}")
-        self.textEdit.setText(str(self.prediction[0][0]*100))
+        ticker = yf.Ticker("AAPL")
+        data = ticker.history(period="100d")  # lấy nhiều hơn 100d để có cổ tức
+        data = data.copy()
 
+        # Khởi tạo cột "Adjustment Factor"
+        data['Adj Factor'] = 1.0
+
+        # Duyệt từ ngày mới nhất về ngày cũ
+        dates = data.index[::-1]  # đảo ngược thời gian
+        for i in range(1, len(dates)):
+            today = dates[i - 1]
+            prev = dates[i]
+            close_today = data.loc[today, 'Close']
+            dividend = data.loc[prev, 'Dividends']
+            split = data.loc[prev, 'Stock Splits']
+            split_factor = split if split != 0 else 1.0
+            adj = data.loc[today, 'Adj Factor'] / split_factor * (1 - dividend / close_today)
+            data.loc[prev, 'Adj Factor'] = adj
+        data['Adj Close'] = data['Close'] * data['Adj Factor']
+        print(data['Adj Close'])
+        data= data['Adj Close']
+
+
+
+    #     model_path = "C:\\Users\\admin\\OneDrive\\Desktop\\test\\lstm_stock_apple\\prediction\\model.keras"
+    #     X_input = np.array(data.values[-100:]).reshape(1, 100, 1)
+    #     print(X_input)
+    #     model = load_model(model_path)
+    #     self.prediction = model.predict(X_input)
+    #     print(f"Predicted value for the day after tomorrow: {self.prediction} ")
+    #    # self.label.setText( "Ngày gần nhất: " + self.ngay_gan_nhat())
+    #     print(self.ngay_gan_nhat())
+        
+
+        scaler = MinMaxScaler()
+        scaled_data = scaler.fit_transform(data.values.reshape(-1, 1))
+        X_input = scaled_data[-100:].reshape(1, 100, 1)
+
+    # Load mô hình
+        model_path = "C:\\Users\\admin\\OneDrive\\Desktop\\test\\lstm_stock_apple\\prediction\\model.keras"
+        model = load_model(model_path)
+
+    # Dự đoán
+        prediction = model.predict(X_input)
+
+    # Scale ngược để lấy giá trị thực
+        predicted_price = scaler.inverse_transform(prediction)[0][0]
+        print(f"Giá dự đoán cho ngày mai: {predicted_price:.2f} USD")
+        self.textEdit.setText(f"{predicted_price:.2f} USD")
+        self.prediction =predicted_price
+
+
+
+    def Adj_close(sefl):
+        ticker = yf.Ticker("AAPL")
+        data = ticker.history(period="100d")  # lấy nhiều hơn 100d để có cổ tức
+        data = data.copy()
+
+        # Khởi tạo cột "Adjustment Factor"
+        data['Adj Factor'] = 1.0
+
+        # Duyệt từ ngày mới nhất về ngày cũ
+        dates = data.index[::-1]  # đảo ngược thời gian
+        for i in range(1, len(dates)):
+            today = dates[i - 1]
+            prev = dates[i]
+
+            close_today = data.loc[today, 'Close']
+            dividend = data.loc[prev, 'Dividends']
+            split = data.loc[prev, 'Stock Splits']
+
+            # Nếu có chia tách cổ phiếu, dùng làm hệ số nhân
+            split_factor = split if split != 0 else 1.0
+
+            # Tính hệ số điều chỉnh cho ngày trước đó
+            adj = data.loc[today, 'Adj Factor'] / split_factor * (1 - dividend / close_today)
+            data.loc[prev, 'Adj Factor'] = adj
+        # Tính Adj Close
+        data['Adj Close'] = data['Close'] * data['Adj Factor']
+        # Hiển thị
+        print(data[['Close', 'Adj Close', 'Dividends', 'Stock Splits']].tail(100))
+        return data["Adj Close"]
+    def ngay_gan_nhat(data):
+        ticker = yf.Ticker("AAPL")
+        data = ticker.history(period="100d")
+        latest_date = data.index.max()
+        return latest_date.strftime('%d-%m-%Y')  
     def plot_graph(self):
-     
-        df=pd.read_csv(self.filepath)
-        data=df[-100:]
-        data= data["Adj Close"]
+        #df=pd.read_csv(self.filepath)
+        data = self.Adj_close()
         data= data.reset_index(drop=True)
         full_data = np.append(data, self.prediction)
         dates = np.arange(1, len(full_data) + 1)  # Trục thời gian giả định (số ngày)
@@ -97,7 +184,7 @@ class Ui_MainWindow_main(object):
         # Vẽ biểu đồ
         plt.figure(figsize=(12, 6))
         plt.plot(dates[:-1], data, label="Actual Adj Close", color='blue')  # Dữ liệu thực tế
-        plt.scatter(dates[-1], self.prediction*100, color='red', label="Tomorrow's Predictions")  # Giá trị dự đoán
+        plt.scatter(dates[-1], self.prediction , color='red', label="Price Predictions")  # Giá trị dự đoán
         plt.axvline(x=len(dates)-1, color='red', linestyle='--', label="The line separating today from tomorrow")  # Điểm phân chia dự đoán
 
         # Thêm thông tin vào biểu đồ
